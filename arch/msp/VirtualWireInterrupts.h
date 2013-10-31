@@ -23,41 +23,6 @@ void vw_setup(uint16_t speed)
 	digitalWrite(vw_ptt_pin, vw_ptt_inverted);
 }	
 
-void vw_Int_Handler()
-{
-    if (vw_rx_enabled && !vw_tx_enabled)
-	vw_rx_sample = digitalRead(vw_rx_pin) ^ vw_rx_inverted;
-    
-    // Do transmitter stuff first to reduce transmitter bit jitter due 
-    // to variable receiver processing
-    if (vw_tx_enabled && vw_tx_sample++ == 0)
-    {
-	// Send next bit
-	// Symbols are sent LSB first
-	// Finished sending the whole message? (after waiting one bit period 
-	// since the last bit)
-	if (vw_tx_index >= vw_tx_len)
-	{
-	    vw_tx_stop();
-	    vw_tx_msg_count++;
-	}
-	else
-	{
-	    digitalWrite(vw_tx_pin, vw_tx_buf[vw_tx_index] & (1 << vw_tx_bit++));
-	    if (vw_tx_bit >= 6)
-	    {
-		vw_tx_bit = 0;
-		vw_tx_index++;
-	    }
-	}
-    }
-    if (vw_tx_sample > 7)
-	vw_tx_sample = 0;
-    
-    if (vw_rx_enabled && !vw_tx_enabled)
-	vw_pll();
-}
-
 interrupt(TIMER0_A0_VECTOR) Timer_A_int(void) 
 {
     vw_Int_Handler();
